@@ -98,7 +98,7 @@ endif::[]
 
 :docker_org: jbrisbin
 
-== Publish
+== Publishing the Image
 
 Tag and publish the image if the attribute `publish` is set when running the build.
 
