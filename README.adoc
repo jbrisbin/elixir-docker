@@ -105,7 +105,7 @@ Tag and publish the image if the attribute `publish` is set when running the bui
 * `publish`: {publish}
 
 ifdef::publish[]
-:docker_image_name: elixir:{os_family}-{riak_version}
+:docker_image_name: elixir:{os_family}-{os_version}
 ifdef::docker_org[]
 :docker_image_tag: {docker_org}/{docker_image_name}
 endif::docker_org[]
@@ -135,7 +135,7 @@ endif::docker_org[]
 [asciibuild,bash]
 ----
 # Push 'latest' tag
-docker tag {{riak_tag}} {{docker_latest_tag}}
+docker tag elixir {{docker_latest_tag}}
 docker push {{docker_latest_tag}}
 ----
 endif::latest[]
