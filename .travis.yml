@@ -1,0 +1,19 @@
+sudo: required
+
+services:
+  - docker
+
+before_script:
+  - gem install asciibuild
+  - '[ "false" == "$TRAVIS_PULL_REQUEST" ] && docker login -u $DOCKER_USER -p $DOCKER_PASSWORD'
+
+script:
+  - travis_retry asciibuild $ASCIIBUILD_OPTS -a travis=$TRAVIS -a skip_publish=$TRAVIS_PULL_REQUEST README.adoc
+
+env:
+  global:
+    - ENCODING=en_US.UTF-8
+  matrix:
+    - ASCIIBUILD_OPTS="-a encoding=$ENCODING -a os_family=ubuntu -a os_version=14.04"
+    - ASCIIBUILD_OPTS="-a encoding=$ENCODING -a os_family=ubuntu -a os_version=16.04 -a latest"
+    - ASCIIBUILD_OPTS="-a encoding=$ENCODING -a os_family=debian -a os_version=8"

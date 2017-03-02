@@ -1,0 +1,142 @@
+= Elixir Base Docker Image
+
+This Docker images contains Elixir installed from Erlang Solutions Debian packages in a Ubuntu Xenial or Debian Jessie base.
+
+== Configuration
+
+The image build can be configured using https://github.com/jbrisbin/asciibuild[`asciibuild`] attributes.
+
+:os_family: ubuntu
+:os_version: 16.04
+
+ifeval::["{os_family}" == "ubuntu"]
+:ubuntu:
+ifeval::["{os_version}" == "14.04"]
+:os_flavor: trusty
+:trusty:
+endif::[]
+ifeval::["{os_version}" == "16.04"]
+:os_flavor: xenial
+:xenial:
+endif::[]
+endif::[]
+
+ifeval::["{os_family}" == "debian"]
+:!ubuntu:
+:debian:
+ifeval::["{os_version}" == "8"]
+:os_flavor: jessie
+:jessie:
+endif::[]
+endif::[]
+
+ifeval::["{travis}" == "true"]
+:publish:
+endif::[]
+
+ifeval::["{skip_publish}" == "true"]
+:publish!:
+:latest!:
+endif::[]
+
+:docker_org: jbrisbin
+
+:upgrade:
+:encoding: en_US.UTF-8
+
+.Attributes that influence the build
+* `os_family`: _{os_family}_ What OS family to base the image on. (`ubuntu` or `debian`)
+* `os_version`: _{os_version}_ What version of OS to use as the base (`14.04` or `16.04` for `ubuntu` or `8` for `debian`).
+* `upgrade`: _{upgrade}_ Whether to upgrade the packages to the latest available when building the image.
+* `encoding`: _{encoding}_ What `LANG` encoding to use as default.
+* `publish`: _{publish}_ Whether to publish the image or not.
+
+== Building the Image
+
+Build the image using `asciibuild`, setting any attributes needed with the `-a` flag.
+
+[source,bash]
+----
+asciibuild -a os_family=ubuntu os_version=16.04 README.adoc
+----
+
+.Dockerfile
+[source,Dockerfile]
+[asciibuild,Dockerfile,image="elixir"]
+----
+FROM {{os_family}}:{{os_version}}
+MAINTAINER Jon Brisbin <jon@jbrisbin.com>
+
+ENV OS_FAMILY {{os_family}}
+ENV OS_VERSION {{os_version}}
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN true
+
+RUN apt-get update --fix-missing
+ifdef::upgrade[]
+RUN apt-get upgrade -y
+endif::upgrade[]
+RUN apt-get install -y apt-transport-https curl git openssl ca-certificates
+
+RUN echo "deb https://packages.erlang-solutions.com/{{os_family}} {{os_flavor}} contrib" >>/etc/apt/sources.list
+RUN curl -s -o /tmp/erlang_solutions.asc https://packages.erlang-solutions.com/{{os_family}}/erlang_solutions.asc
+RUN apt-key add /tmp/erlang_solutions.asc
+RUN apt-get update
+RUN apt-get install -y elixir
+
+ifdef::debian[]
+RUN apt-get install -y locales
+endif::debian[]
+RUN locale-gen {{encoding}}
+ENV LANG {{encoding}}
+ENV LC_CTYPE {{encoding}}
+
+RUN rm -rf /var/lib/apt/lists/* /tmp/*
+
+CMD ["iex"]
+----
+
+
+== Publish
+
+Tag and publish the image if the attribute `publish` is set when running the build.
+
+* `publish`: {publish}
+
+ifdef::publish[]
+:docker_image_name: elixir:{os_family}-{riak_version}
+ifdef::docker_org[]
+:docker_image_tag: {docker_org}/{docker_image_name}
+endif::docker_org[]
+ifndef::docker_org[]
+:docker_image_tag: {docker_image_name}
+endif::docker_org[]
+
+.Tag Image
+[source,bash]
+[asciibuild,bash]
+----
+docker tag elixir {{docker_image_tag}}
+# Push specific version
+docker push {{docker_image_tag}}
+----
+
+ifdef::latest[]
+ifdef::docker_org[]
+:docker_latest_tag: {docker_org}/elixir:latest
+endif::docker_org[]
+ifndef::docker_org[]
+:docker_latest_tag: elixir:latest
+endif::docker_org[]
+
+.Tag Latest Image
+[source,bash]
+[asciibuild,bash]
+----
+# Push 'latest' tag
+docker tag {{riak_tag}} {{docker_latest_tag}}
+docker push {{docker_latest_tag}}
+----
+endif::latest[]
+endif::publish[]
