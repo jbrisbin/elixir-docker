@@ -81,6 +81,9 @@ RUN locale-gen {{encoding}}
 ENV LANG {{encoding}}
 ENV LC_CTYPE {{encoding}}
 
+RUN mix local.hex --force
+RUN mix local.rebar --force
+
 RUN rm -rf /var/lib/apt/lists/* /tmp/*
 
 CMD ["iex"]
